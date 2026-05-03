@@ -306,7 +306,7 @@ async function sendSmtpEmail({ to, from, subject, text, html }) {
   const port = Number(process.env.SMTP_PORT || 465);
   const secure = String(process.env.SMTP_SECURE || 'true') === 'true';
   const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const pass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
   if (!host || !user || !pass) throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS are required');
 
   const socket = await createSmtpSocket({ host, port, secure });
@@ -772,12 +772,20 @@ async function handleApi(req, res, pathname) {
     }
     const code = saveAuthCode(db, email, 'register');
     writeDatabase(db);
-    await sendAppEmail({
-      to: email,
-      subject: 'HostelPro email verification code',
-      text: `Hello ${name}, your HostelPro verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`,
-      html: `<p>Hello ${escapeHtml(name)},</p><p>Your HostelPro verification code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
-    });
+    try {
+      await sendAppEmail({
+        to: email,
+        subject: 'HostelPro email verification code',
+        text: `Hello ${name}, your HostelPro verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`,
+        html: `<p>Hello ${escapeHtml(name)},</p><p>Your HostelPro verification code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
+      });
+    } catch (error) {
+      console.error('Could not send registration verification email.', error.message);
+      return sendJson(res, 502, {
+        success: false,
+        message: 'Email sending failed. Check SMTP variables and Gmail app password.'
+      });
+    }
     return sendJson(res, 200, { success: true, message: 'Verification code sent to your email.' });
   }
 
