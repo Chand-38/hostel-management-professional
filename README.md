@@ -106,6 +106,15 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
 
 Credentials are managed by the hostel administrator. Do not publish shared demo passwords on a hosted deployment.
 
+## Email Setup
+
+Registration verification, password reset, and approval emails use Resend when configured:
+
+- `RESEND_API_KEY`: API key from Resend
+- `MAIL_FROM`: verified sender, for example `HostelPro <noreply@yourdomain.com>`
+
+Without these variables, emails are saved locally to `email-outbox.json` for testing.
+
 ## ðŸ“ Project Structure
 
 ```

@@ -1619,6 +1619,25 @@ tbody tr:hover {
     line-height: 1.5;
 }
 
+.auth-code-row {
+    align-items: end;
+    gap: 1rem;
+}
+
+.code-action-group {
+    margin-bottom: 1.35rem;
+}
+
+.professional-auth-card .btn-outline {
+    border-color: rgba(191, 219, 254, 0.36);
+    color: #dbeafe;
+}
+
+.professional-auth-card .btn-outline:hover {
+    background: rgba(37, 99, 235, 0.24);
+    color: var(--white);
+}
+
 .btn-block {
     width: 100%;
 }

@@ -28,7 +28,8 @@ class AuthManager {
             email: user.email,
             role: user.role,
             status: user.status || 'Approved',
-            studentId: user.studentId || null
+            studentId: user.studentId || null,
+            hostelId: user.hostelId || null
         };
 
         localStorage.setItem('hms_session', JSON.stringify(session));
@@ -45,13 +46,57 @@ class AuthManager {
             return { success: false, message: 'Email already registered' };
         }
 
-        const newUser = await dataStore.addUser(userData);
+        let newUser;
+        try {
+            const result = await dataStore.request('/api/auth/register', {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+            newUser = result.user;
+            dataStore.state.users.push(newUser);
+            dataStore.syncLocalCache();
+        } catch (error) {
+            return { success: false, message: error.message || 'Unable to register' };
+        }
 
         return {
             success: true,
             user: newUser,
             message: 'Request sent. Admin approval is required before login.'
         };
+    }
+
+    async sendRegisterCode(name, email) {
+        try {
+            return await dataStore.request('/api/auth/send-register-code', {
+                method: 'POST',
+                body: JSON.stringify({ name, email })
+            });
+        } catch (error) {
+            return { success: false, message: error.message || 'Unable to send verification code' };
+        }
+    }
+
+    async requestPasswordReset(email) {
+        try {
+            return await dataStore.request('/api/auth/forgot-password', {
+                method: 'POST',
+                body: JSON.stringify({ email })
+            });
+        } catch (error) {
+            return { success: false, message: error.message || 'Unable to send password reset code' };
+        }
+    }
+
+    async resetPassword(email, code, password) {
+        try {
+            return await dataStore.request('/api/auth/reset-password', {
+                method: 'POST',
+                body: JSON.stringify({ email, code, password })
+            });
+        } catch (error) {
+            return { success: false, message: error.message || 'Unable to reset password' };
+        }
     }
 
     // Logout

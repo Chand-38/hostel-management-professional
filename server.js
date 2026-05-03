@@ -6,6 +6,8 @@ const { createHash, randomUUID } = require('crypto');
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const DB_FILE = path.join(ROOT, 'db.json');
+const EMAIL_OUTBOX_FILE = path.join(ROOT, 'email-outbox.json');
+const CODE_TTL_MINUTES = 15;
 
 const seedData = {
   hostels: [
@@ -192,6 +194,14 @@ function hashPassword(password) {
   return `sha256:${createHash('sha256').update(String(password)).digest('hex')}`;
 }
 
+function hashCode(code) {
+  return createHash('sha256').update(String(code)).digest('hex');
+}
+
+function generateEmailCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 function passwordMatches(user, password) {
   if (!user?.password) return false;
   if (String(user.password).startsWith('sha256:')) return user.password === hashPassword(password);
@@ -217,7 +227,7 @@ function writeDatabase(data) {
 }
 
 function ensureCollections(db) {
-  for (const key of ['hostels', 'attendance', 'notices', 'leaveRequests', 'roomRequests']) {
+  for (const key of ['hostels', 'attendance', 'notices', 'leaveRequests', 'roomRequests', 'authCodes']) {
     if (!Array.isArray(db[key])) db[key] = [];
   }
   if (!db.hostels.length) db.hostels = seedData.hostels;
@@ -230,6 +240,66 @@ function ensureCollections(db) {
   }));
   db.users = (db.users || []).map(user => ({ ...user, hostelId: user.hostelId || (user.role === 'warden' ? defaultHostelId : user.hostelId) }));
   return db;
+}
+
+async function sendAppEmail({ to, subject, text, html }) {
+  const from = process.env.MAIL_FROM || 'HostelPro <onboarding@resend.dev>';
+  if (process.env.RESEND_API_KEY) {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ from, to, subject, text, html })
+    });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Email provider error: ${detail}`);
+    }
+    return true;
+  }
+
+  const outbox = fs.existsSync(EMAIL_OUTBOX_FILE)
+    ? JSON.parse(fs.readFileSync(EMAIL_OUTBOX_FILE, 'utf8'))
+    : [];
+  outbox.push({ to, from, subject, text, html, createdAt: new Date().toISOString() });
+  fs.writeFileSync(EMAIL_OUTBOX_FILE, JSON.stringify(outbox, null, 2));
+  console.log(`[email-outbox] ${subject} -> ${to}`);
+  return true;
+}
+
+function saveAuthCode(db, email, purpose) {
+  const code = generateEmailCode();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + CODE_TTL_MINUTES * 60 * 1000).toISOString();
+  db.authCodes = db.authCodes.filter(item => !(item.email === email && item.purpose === purpose));
+  db.authCodes.push({
+    id: randomUUID(),
+    email,
+    purpose,
+    codeHash: hashCode(code),
+    expiresAt,
+    used: false,
+    createdAt: now.toISOString()
+  });
+  return code;
+}
+
+function verifyAuthCode(db, email, purpose, code) {
+  const record = db.authCodes
+    .filter(item => item.email === email && item.purpose === purpose && !item.used)
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))[0];
+  if (!record) return { ok: false, message: 'Verification code not found. Please request a new code.' };
+  if (new Date(record.expiresAt).getTime() < Date.now()) {
+    return { ok: false, message: 'Verification code expired. Please request a new code.' };
+  }
+  if (record.codeHash !== hashCode(code)) {
+    return { ok: false, message: 'Invalid verification code.' };
+  }
+  record.used = true;
+  record.usedAt = new Date().toISOString();
+  return { ok: true };
 }
 
 function sendJson(res, status, data) {
@@ -580,20 +650,47 @@ async function handleApi(req, res, pathname) {
     return sendJson(res, 200, { success: true, user: publicUser(user) });
   }
 
+  if (pathname === '/api/auth/send-register-code' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const db = ensureCollections(readDatabase());
+    const email = String(payload.email || '').trim().toLowerCase();
+    const name = String(payload.name || 'Student').trim();
+    if (!email) return sendJson(res, 400, { success: false, message: 'Email is required' });
+    if (db.users.some(user => user.email === email)) {
+      return sendJson(res, 409, { success: false, message: 'Email already registered' });
+    }
+    const code = saveAuthCode(db, email, 'register');
+    writeDatabase(db);
+    await sendAppEmail({
+      to: email,
+      subject: 'HostelPro email verification code',
+      text: `Hello ${name}, your HostelPro verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`,
+      html: `<p>Hello ${escapeHtml(name)},</p><p>Your HostelPro verification code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
+    });
+    return sendJson(res, 200, { success: true, message: 'Verification code sent to your email.' });
+  }
+
   if (pathname === '/api/auth/register' && req.method === 'POST') {
     const payload = await readBody(req);
     const db = ensureCollections(readDatabase());
-    if (db.users.some(user => user.email === payload.email)) {
+    const email = String(payload.email || '').trim().toLowerCase();
+    if (db.users.some(user => user.email === email)) {
       return sendJson(res, 409, { success: false, message: 'Email already registered' });
     }
+    const verified = verifyAuthCode(db, email, 'register', payload.emailCode);
+    if (!verified.ok) return sendJson(res, 400, { success: false, message: verified.message });
     const user = {
       ...payload,
       id: randomUUID(),
+      email,
       role: 'student',
       password: hashPassword(payload.password),
       status: 'Pending',
+      emailVerified: true,
+      emailVerifiedAt: new Date().toISOString(),
       requestedAt: new Date().toISOString()
     };
+    delete user.emailCode;
     db.users.push(user);
     writeDatabase(db);
     return sendJson(res, 201, {
@@ -601,6 +698,50 @@ async function handleApi(req, res, pathname) {
       user: publicUser(user),
       message: 'Registration request submitted. Admin approval is required before login.'
     });
+  }
+
+  if (pathname === '/api/auth/forgot-password' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const db = ensureCollections(readDatabase());
+    const email = String(payload.email || '').trim().toLowerCase();
+    const user = db.users.find(entry => entry.email === email);
+    if (user) {
+      const code = saveAuthCode(db, email, 'reset-password');
+      writeDatabase(db);
+      await sendAppEmail({
+        to: email,
+        subject: 'HostelPro password reset code',
+        text: `Your HostelPro password reset code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`,
+        html: `<p>Your HostelPro password reset code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
+      });
+    }
+    return sendJson(res, 200, {
+      success: true,
+      message: 'If this email is registered, a password reset code has been sent.'
+    });
+  }
+
+  if (pathname === '/api/auth/reset-password' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const db = ensureCollections(readDatabase());
+    const email = String(payload.email || '').trim().toLowerCase();
+    const userIndex = db.users.findIndex(entry => entry.email === email);
+    if (userIndex === -1) return sendJson(res, 404, { success: false, message: 'Account not found' });
+    if (!payload.password || String(payload.password).length < 6) {
+      return sendJson(res, 400, { success: false, message: 'Password must be at least 6 characters.' });
+    }
+    const verified = verifyAuthCode(db, email, 'reset-password', payload.code);
+    if (!verified.ok) return sendJson(res, 400, { success: false, message: verified.message });
+    db.users[userIndex].password = hashPassword(payload.password);
+    db.users[userIndex].passwordResetAt = new Date().toISOString();
+    writeDatabase(db);
+    await sendAppEmail({
+      to: email,
+      subject: 'HostelPro password changed',
+      text: 'Your HostelPro password was changed successfully. If this was not you, contact the hostel administrator.',
+      html: '<p>Your HostelPro password was changed successfully.</p><p>If this was not you, contact the hostel administrator.</p>'
+    });
+    return sendJson(res, 200, { success: true, message: 'Password reset successful. You can login now.' });
   }
 
   if (pathname === '/api/users' || pathname.startsWith('/api/users/')) {
@@ -635,8 +776,21 @@ async function handleApi(req, res, pathname) {
       const payload = await readBody(req);
       const index = db.users.findIndex(user => user.id === id);
       if (index === -1) return sendJson(res, 404, { message: 'User not found' });
+      const previousStatus = db.users[index].status;
       db.users[index] = { ...db.users[index], ...payload, id };
       writeDatabase(db);
+      if (previousStatus !== 'Approved' && db.users[index].status === 'Approved') {
+        try {
+          await sendAppEmail({
+            to: db.users[index].email,
+            subject: 'HostelPro account approved',
+            text: `Hello ${db.users[index].name}, your HostelPro account has been approved. You can now login.`,
+            html: `<p>Hello ${escapeHtml(db.users[index].name)},</p><p>Your HostelPro account has been approved. You can now login.</p>`
+          });
+        } catch (error) {
+          console.warn('Could not send approval email.', error.message);
+        }
+      }
       return sendJson(res, 200, publicUser(db.users[index]));
     }
 

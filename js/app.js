@@ -78,7 +78,7 @@ class App {
     }
 
     canAccess(route) {
-        if (route === 'login' || route === 'register') return true;
+        if (route === 'login' || route === 'register' || route === 'forgot-password') return true;
         const user = authManager.getCurrentUser();
         return user && this.roleConfig(user.role).routes.includes(route);
     }
@@ -88,12 +88,12 @@ class App {
         const route = hash.split('/')[1] || 'login';
         const user = authManager.getCurrentUser();
 
-        if (route !== 'login' && route !== 'register' && !user) {
+        if (route !== 'login' && route !== 'register' && route !== 'forgot-password' && !user) {
             window.location.hash = '#/login';
             return;
         }
 
-        if ((route === 'login' || route === 'register') && user) {
+        if ((route === 'login' || route === 'register' || route === 'forgot-password') && user) {
             window.location.hash = '#/dashboard';
             return;
         }
@@ -119,6 +119,12 @@ class App {
         if (this.currentPage === 'register') {
             appContainer.innerHTML = this.getRegisterPage();
             this.attachRegisterHandlers();
+            return;
+        }
+
+        if (this.currentPage === 'forgot-password') {
+            appContainer.innerHTML = this.getForgotPasswordPage();
+            this.attachForgotPasswordHandlers();
             return;
         }
 
@@ -201,7 +207,7 @@ class App {
                 <input type="checkbox" id="rememberMe">
                 <span>Remember me</span>
               </label>
-              <a href="#/login">Forgot Password?</a>
+              <a href="#/forgot-password">Forgot Password?</a>
             </div>
 
             <div id="loginError" class="alert-danger hidden"></div>
@@ -241,11 +247,57 @@ class App {
               <label class="form-label">Password</label>
               <input type="password" class="form-control" id="regPassword" required>
             </div>
+            <div class="form-row auth-code-row">
+              <div class="form-group">
+                <label class="form-label">Email Verification Code</label>
+                <input type="text" class="form-control" id="regEmailCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" required>
+              </div>
+              <div class="form-group code-action-group">
+                <label class="form-label">Verification</label>
+                <button type="button" class="btn btn-outline btn-block" id="sendRegisterCode">Send Code</button>
+              </div>
+            </div>
             <div class="approval-note">
-              Student registration requests go to the admin dashboard. Warden and admin accounts are created by an existing admin.
+              First verify your email. After submitting, your student request goes to the admin dashboard for approval.
             </div>
             <div id="registerError" class="alert-danger hidden"></div>
             <button type="submit" class="btn btn-primary btn-block">Send Request</button>
+          </form>
+          <p class="text-center mt-3"><a href="#/login" class="text-primary">Back to login</a></p>
+        </section>
+      </div>
+    `;
+    }
+
+    getForgotPasswordPage() {
+        return `
+      <div class="auth-shell">
+        <section class="auth-card professional-auth-card">
+          <div class="auth-header">
+            <div class="auth-kicker">Account recovery</div>
+            <h2 class="auth-title">Reset Password</h2>
+            <p class="auth-subtitle">Enter your email, get a verification code, then set a new password.</p>
+          </div>
+
+          <form id="forgotPasswordForm">
+            <div class="form-group">
+              <label class="form-label">Email address</label>
+              <input type="email" class="form-control" id="resetEmail" placeholder="name@example.com" required>
+            </div>
+            <button type="button" class="btn btn-outline btn-block" id="sendResetCode">Send Reset Code</button>
+            <div class="form-row auth-code-row">
+              <div class="form-group">
+                <label class="form-label">Reset Code</label>
+                <input type="text" class="form-control" id="resetCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-control" id="newPassword" minlength="6" required>
+              </div>
+            </div>
+            <div id="forgotMessage" class="success-note hidden"></div>
+            <div id="forgotError" class="alert-danger hidden"></div>
+            <button type="submit" class="btn btn-primary btn-block">Reset Password</button>
           </form>
           <p class="text-center mt-3"><a href="#/login" class="text-primary">Back to login</a></p>
         </section>
@@ -2204,12 +2256,37 @@ class App {
     }
 
     attachRegisterHandlers() {
+        document.getElementById('sendRegisterCode')?.addEventListener('click', async (e) => {
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const errorEl = document.getElementById('registerError');
+            errorEl.classList.add('hidden');
+            if (!name || !email) {
+                errorEl.textContent = 'Enter your name and email before requesting a code.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            e.currentTarget.disabled = true;
+            e.currentTarget.textContent = 'Sending...';
+            const result = await authManager.sendRegisterCode(name, email);
+            if (result.success) {
+                errorEl.textContent = result.message || 'Verification code sent to your email.';
+                errorEl.classList.remove('hidden');
+            } else {
+                errorEl.textContent = result.message;
+                errorEl.classList.remove('hidden');
+            }
+            e.currentTarget.disabled = false;
+            e.currentTarget.textContent = 'Send Code';
+        });
+
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const userData = {
                 name: document.getElementById('regName').value.trim(),
                 email: document.getElementById('regEmail').value.trim(),
                 password: document.getElementById('regPassword').value,
+                emailCode: document.getElementById('regEmailCode').value.trim(),
                 role: 'student'
             };
 
@@ -2227,6 +2304,55 @@ class App {
                 errorEl.classList.remove('hidden');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Send Request';
+            }
+        });
+    }
+
+    attachForgotPasswordHandlers() {
+        const messageEl = document.getElementById('forgotMessage');
+        const errorEl = document.getElementById('forgotError');
+        const showMessage = (message) => {
+            errorEl.classList.add('hidden');
+            messageEl.textContent = message;
+            messageEl.classList.remove('hidden');
+        };
+        const showError = (message) => {
+            messageEl.classList.add('hidden');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        };
+
+        document.getElementById('sendResetCode')?.addEventListener('click', async (e) => {
+            const email = document.getElementById('resetEmail').value.trim();
+            if (!email) {
+                showError('Enter your email before requesting a reset code.');
+                return;
+            }
+            e.currentTarget.disabled = true;
+            e.currentTarget.textContent = 'Sending...';
+            const result = await authManager.requestPasswordReset(email);
+            if (result.success) showMessage(result.message);
+            else showError(result.message);
+            e.currentTarget.disabled = false;
+            e.currentTarget.textContent = 'Send Reset Code';
+        });
+
+        document.getElementById('forgotPasswordForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value.trim();
+            const code = document.getElementById('resetCode').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const submitBtn = e.submitter;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Resetting...';
+            const result = await authManager.resetPassword(email, code, password);
+            if (result.success) {
+                showMessage(result.message);
+                setTimeout(() => { window.location.hash = '#/login'; }, 1200);
+            } else {
+                showError(result.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Reset Password';
             }
         });
     }
