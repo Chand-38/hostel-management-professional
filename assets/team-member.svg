@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" role="img" aria-label="Team member portrait placeholder">
+  <rect width="640" height="640" rx="64" fill="#dcfce7"/>
+  <circle cx="320" cy="246" r="114" fill="#047857"/>
+  <path d="M144 562c22-108 88-170 176-170s154 62 176 170" fill="#064e3b"/>
+  <path d="M224 546c14-60 48-94 96-94s82 34 96 94" fill="#10b981"/>
+  <circle cx="278" cy="244" r="13" fill="#ecfdf5"/>
+  <circle cx="362" cy="244" r="13" fill="#ecfdf5"/>
+  <path d="M284 296c22 20 50 20 72 0" fill="none" stroke="#ecfdf5" stroke-width="15" stroke-linecap="round"/>
+  <path d="M198 178c38-72 104-106 174-92 76 14 124 76 128 168-62-28-132-38-210-28-34 4-66-14-92-48z" fill="#052e16"/>
+  <rect x="70" y="72" width="186" height="48" rx="24" fill="#2563eb"/>
+  <text x="163" y="103" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="700">TEAM</text>
+</svg>

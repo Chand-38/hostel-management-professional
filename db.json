@@ -1,0 +1,522 @@
+{
+  "students": [
+    {
+      "hostelId": "h1",
+      "id": "1",
+      "name": "Raj Kumar",
+      "email": "raj.kumar@example.com",
+      "phone": "9876543210",
+      "guardianName": "Mr. Kumar",
+      "guardianPhone": "9876543211",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "bedNumber": "1",
+      "joiningDate": "2024-01-15",
+      "feeStatus": "Paid",
+      "status": "Active",
+      "photo": ""
+    },
+    {
+      "hostelId": "h1",
+      "id": "2",
+      "name": "Priya Sharma",
+      "email": "priya.sharma@example.com",
+      "phone": "9876543212",
+      "guardianName": "Mrs. Sharma",
+      "guardianPhone": "9876543213",
+      "hostelBlock": "B",
+      "roomNumber": "202",
+      "bedNumber": "2",
+      "joiningDate": "2024-02-20",
+      "feeStatus": "Pending",
+      "status": "Active",
+      "photo": ""
+    },
+    {
+      "hostelId": "h1",
+      "id": "3",
+      "name": "Amit Patel",
+      "email": "amit.patel@example.com",
+      "phone": "9876543214",
+      "guardianName": "Mr. Patel",
+      "guardianPhone": "9876543215",
+      "hostelBlock": "A",
+      "roomNumber": "103",
+      "bedNumber": "1",
+      "joiningDate": "2024-03-10",
+      "feeStatus": "Paid",
+      "status": "Active",
+      "photo": ""
+    },
+    {
+      "hostelId": "h1",
+      "name": "chand",
+      "email": "chand@gmail.com",
+      "phone": "9876543212",
+      "guardianName": "Mrs. Sharma",
+      "guardianPhone": "9876543213",
+      "joiningDate": "2026-03-02",
+      "hostelBlock": "B",
+      "roomNumber": "202",
+      "bedNumber": "1",
+      "feeStatus": "Paid",
+      "status": "Active",
+      "photo": "",
+      "id": "ff56c2e1-9ce9-4d81-8b93-9badf32a30ec"
+    }
+  ],
+  "rooms": [
+    {
+      "hostelId": "h1",
+      "floor": "",
+      "id": "1",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "totalBeds": 4,
+      "occupiedBeds": 1,
+      "available": true
+    },
+    {
+      "hostelId": "h1",
+      "floor": "",
+      "id": "2",
+      "hostelBlock": "A",
+      "roomNumber": "102",
+      "totalBeds": 4,
+      "occupiedBeds": 4,
+      "available": false
+    },
+    {
+      "hostelId": "h1",
+      "floor": "",
+      "id": "3",
+      "hostelBlock": "A",
+      "roomNumber": "103",
+      "totalBeds": 4,
+      "occupiedBeds": 1,
+      "available": true
+    },
+    {
+      "hostelId": "h1",
+      "floor": "",
+      "id": "4",
+      "hostelBlock": "B",
+      "roomNumber": "201",
+      "totalBeds": 3,
+      "occupiedBeds": 0,
+      "available": true
+    },
+    {
+      "hostelId": "h1",
+      "floor": "",
+      "id": "5",
+      "hostelBlock": "B",
+      "roomNumber": "202",
+      "totalBeds": 3,
+      "occupiedBeds": 1,
+      "available": true
+    },
+    {
+      "hostelId": "h1",
+      "floor": "",
+      "id": "6",
+      "hostelBlock": "C",
+      "roomNumber": "301",
+      "totalBeds": 2,
+      "occupiedBeds": 0,
+      "available": true
+    },
+    {
+      "hostelId": "h1",
+      "hostelBlock": "D",
+      "floor": "4",
+      "roomNumber": "401",
+      "totalBeds": 4,
+      "occupiedBeds": 0,
+      "available": true,
+      "id": "a1541c23-808a-41d6-a420-d1c51283027f"
+    }
+  ],
+  "payments": [
+    {
+      "id": "1",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "amount": 15000,
+      "paymentDate": "2024-01-15",
+      "paymentMethod": "UPI",
+      "status": "Completed",
+      "receipt": "RCP001"
+    },
+    {
+      "id": "2",
+      "studentId": "3",
+      "studentName": "Amit Patel",
+      "amount": 15000,
+      "paymentDate": "2024-03-10",
+      "paymentMethod": "Bank Transfer",
+      "status": "Completed",
+      "receipt": "RCP002"
+    }
+  ],
+  "complaints": [
+    {
+      "id": "1",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "category": "Maintenance",
+      "subject": "AC not working",
+      "description": "The air conditioner in room 101 is not cooling properly.",
+      "date": "2024-12-10",
+      "status": "Resolved",
+      "priority": "High"
+    },
+    {
+      "id": "2",
+      "studentId": "2",
+      "studentName": "Priya Sharma",
+      "category": "Food",
+      "subject": "Mess food quality",
+      "description": "The quality of mess food needs improvement.",
+      "date": "2024-12-12",
+      "status": "Resolved",
+      "priority": "Medium"
+    }
+  ],
+  "visitors": [
+    {
+      "id": "1",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "visitorName": "Mr. Kumar",
+      "relationship": "Father",
+      "phone": "9876543211",
+      "purpose": "Personal Visit",
+      "checkIn": "2024-12-13 10:00",
+      "checkOut": "2024-12-13 15:00",
+      "date": "2024-12-13"
+    },
+    {
+      "id": "2",
+      "studentId": "2",
+      "studentName": "Priya Sharma",
+      "visitorName": "Mrs. Sharma",
+      "relationship": "Mother",
+      "phone": "9876543213",
+      "purpose": "Parent-Teacher Meeting",
+      "checkIn": "2024-12-12 14:00",
+      "checkOut": "2024-12-12 17:00",
+      "date": "2024-12-12"
+    }
+  ],
+  "attendance": [
+    {
+      "id": "1",
+      "date": "2026-05-03",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "2",
+      "date": "2026-05-03",
+      "studentId": "2",
+      "studentName": "Priya Sharma",
+      "hostelBlock": "B",
+      "roomNumber": "202",
+      "status": "Leave",
+      "remarks": "Medical leave",
+      "markedBy": "Admin User",
+      "markedAt": "2026-05-02T22:53:43.721Z"
+    },
+    {
+      "id": "149148d0-9cdb-4b23-885c-6791f7e294cb",
+      "date": "2026-05-02",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Present",
+      "remarks": "",
+      "markedBy": "Admin User",
+      "markedAt": "2026-05-02T22:53:29.825Z"
+    },
+    {
+      "id": "c9930ed9-1a84-4740-a5e5-b618f4102399",
+      "date": "2026-05-02",
+      "studentId": "2",
+      "studentName": "Priya Sharma",
+      "hostelBlock": "B",
+      "roomNumber": "202",
+      "status": "Present",
+      "remarks": "",
+      "markedBy": "Admin User",
+      "markedAt": "2026-05-02T22:53:29.825Z"
+    },
+    {
+      "id": "e062802c-520b-44f1-97ec-4f8b1941026b",
+      "date": "2026-05-02",
+      "studentId": "3",
+      "studentName": "Amit Patel",
+      "hostelBlock": "A",
+      "roomNumber": "103",
+      "status": "Present",
+      "remarks": "",
+      "markedBy": "Admin User",
+      "markedAt": "2026-05-02T22:53:29.825Z"
+    },
+    {
+      "id": "444b0155-8056-4040-83bd-589933f451f2",
+      "date": "2026-05-02",
+      "studentId": "ff56c2e1-9ce9-4d81-8b93-9badf32a30ec",
+      "studentName": "chand",
+      "hostelBlock": "B",
+      "roomNumber": "202",
+      "status": "Present",
+      "remarks": "",
+      "markedBy": "Admin User",
+      "markedAt": "2026-05-02T22:53:29.825Z"
+    },
+    {
+      "id": "727a9cdf-c782-489e-8ff9-3638753d5a4c",
+      "date": "2026-05-03",
+      "studentId": "3",
+      "studentName": "Amit Patel",
+      "hostelBlock": "A",
+      "roomNumber": "103",
+      "status": "Present",
+      "remarks": "",
+      "markedBy": "Admin User",
+      "markedAt": "2026-05-02T22:53:43.721Z"
+    },
+    {
+      "id": "077410b5-b424-418a-b5d0-80f6df9008ac",
+      "date": "2026-05-03",
+      "studentId": "ff56c2e1-9ce9-4d81-8b93-9badf32a30ec",
+      "studentName": "chand",
+      "hostelBlock": "B",
+      "roomNumber": "202",
+      "status": "Present",
+      "remarks": "",
+      "markedBy": "Admin User",
+      "markedAt": "2026-05-02T22:53:43.721Z"
+    },
+    {
+      "id": "b313d160-a17b-4be9-bccb-b33ffb1bbdb1",
+      "date": "2026-05-04",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "5139aa97-df41-4902-9cf1-b6f8f0a4f34f",
+      "date": "2026-05-05",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "448e7309-9f28-4cc4-ad19-228b21e217a9",
+      "date": "2026-05-06",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "840b5161-6d91-40dc-8560-7d8d5f8e424f",
+      "date": "2026-05-07",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "1bf0dd17-10b8-466a-b216-e49c0428cb92",
+      "date": "2026-05-08",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "2525771c-6aea-4981-b43b-866aec2269fe",
+      "date": "2026-05-09",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "b045d9a6-2270-4877-8a10-ce0f0a1778af",
+      "date": "2026-05-10",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "f612f112-bb38-4c1b-90cc-c590ead2370a",
+      "date": "2026-05-11",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "id": "728ff6a9-ae79-4cf2-916e-9ef885120b7b",
+      "date": "2026-05-12",
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Leave",
+      "remarks": "Approved leave: to attend brother wedding",
+      "markedBy": "Warden Singh",
+      "markedAt": "2026-05-02T23:36:25.960Z"
+    }
+  ],
+  "notices": [
+    {
+      "id": "1",
+      "title": "Mess timing update",
+      "message": "Dinner timing is 7:30 PM to 9:30 PM from this week.",
+      "audience": "All",
+      "priority": "Normal",
+      "date": "2026-05-03",
+      "createdBy": "Admin User"
+    }
+  ],
+  "leaveRequests": [
+    {
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "fromDate": "2026-05-03",
+      "toDate": "2026-05-12",
+      "reason": "to attend brother wedding",
+      "id": "586fd791-a75a-4f05-a694-4b60b33843b4",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "status": "Approved",
+      "requestedAt": "2026-05-02T23:28:37.189Z",
+      "staffRemark": "Approved by hostel office",
+      "reviewedBy": "Warden Singh",
+      "reviewedAt": "2026-05-02T23:36:25.960Z"
+    },
+    {
+      "studentId": "1",
+      "studentName": "Raj Kumar",
+      "fromDate": "2026-05-01",
+      "toDate": "2026-05-10",
+      "reason": "for sister weddind",
+      "status": "Rejected",
+      "id": "b627cc51-dd05-4981-914e-ab874be2e55e",
+      "hostelBlock": "A",
+      "roomNumber": "101",
+      "requestedAt": "2026-05-03T10:07:56.951Z",
+      "staffRemark": "Request rejected by hostel office( Sorry but not approve your request)",
+      "reviewedBy": "Admin User",
+      "reviewedAt": "2026-05-03T10:28:54.933Z"
+    }
+  ],
+  "roomRequests": [],
+  "users": [
+    {
+      "id": "1",
+      "name": "Admin User",
+      "email": "admin@hostel.com",
+      "password": "admin123",
+      "role": "admin",
+      "status": "Approved"
+    },
+    {
+      "id": "2",
+      "name": "Raj Kumar",
+      "email": "raj.kumar@example.com",
+      "password": "student123",
+      "role": "student",
+      "studentId": "1",
+      "status": "Approved"
+    },
+    {
+      "id": "3",
+      "name": "Warden Singh",
+      "email": "warden@hostel.com",
+      "password": "warden123",
+      "role": "warden",
+      "status": "Approved",
+      "hostelId": "h1"
+    },
+    {
+      "name": "raushan",
+      "email": "raushan@gmail.com",
+      "password": "1234",
+      "role": "student",
+      "id": "722b34ab-a7bf-41e3-8bf8-d66c89b409bc",
+      "status": "Approved",
+      "requestedAt": "2026-05-02T21:36:44.401Z",
+      "approvedAt": "2026-05-02T23:03:38.529Z"
+    }
+  ],
+  "hostels": [
+    {
+      "type": "",
+      "id": "h1",
+      "name": "Main Boys Hostel",
+      "code": "MBH",
+      "address": "Main Campus",
+      "contact": "9876500000",
+      "wardenUserId": "3",
+      "status": "Active"
+    },
+    {
+      "type": "",
+      "id": "h2",
+      "name": "Girls Hostel",
+      "code": "GH",
+      "address": "North Campus",
+      "contact": "9876500001",
+      "wardenUserId": "",
+      "status": "Active"
+    }
+  ]
+}

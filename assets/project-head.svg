@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" role="img" aria-label="Project head portrait placeholder">
+  <rect width="640" height="640" rx="64" fill="#e0f2fe"/>
+  <circle cx="320" cy="244" r="116" fill="#1d4ed8"/>
+  <path d="M148 562c20-114 86-176 172-176s152 62 172 176" fill="#0f172a"/>
+  <path d="M224 546c16-68 50-102 96-102s80 34 96 102" fill="#2563eb"/>
+  <circle cx="278" cy="238" r="14" fill="#dbeafe"/>
+  <circle cx="362" cy="238" r="14" fill="#dbeafe"/>
+  <path d="M282 294c24 22 52 22 76 0" fill="none" stroke="#dbeafe" stroke-width="16" stroke-linecap="round"/>
+  <path d="M192 142c66-94 202-100 272-8 24 32 36 72 36 120-58-34-126-54-204-54-42 0-78-14-104-58z" fill="#0f172a"/>
+  <rect x="70" y="72" width="166" height="48" rx="24" fill="#22c55e"/>
+  <text x="153" y="103" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="700">HEAD</text>
+</svg>
