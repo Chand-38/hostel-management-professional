@@ -810,7 +810,7 @@ tbody tr:hover {
 .mobile-topbar,
 .mobile-backdrop,
 .sidebar-close {
-    display: none;
+    display: none !important;
 }
 
 .icon-btn {
@@ -965,7 +965,7 @@ tbody tr:hover {
     }
 
     .sidebar-close {
-        display: inline-flex;
+        display: inline-flex !important;
         width: auto;
         min-width: 58px;
         height: 36px;
@@ -1729,6 +1729,10 @@ tbody tr:hover {
 
 .pro-sidebar .user-info h4 {
     color: var(--white);
+}
+
+.pro-sidebar .sidebar-close {
+    display: none !important;
 }
 
 .page-header {

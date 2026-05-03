@@ -1,18 +1,18 @@
-# 🏢 Hostel Management System
+﻿# ðŸ¢ Hostel Management System
 
 A comprehensive, modern web-based Hostel Management System (HMS) built with vanilla JavaScript, HTML, and CSS. This Single Page Application (SPA) provides a complete solution for managing hostel operations including student management, room allocation, fee tracking, complaint handling, and visitor logs.
 
 ![Hostel Management System](https://img.shields.io/badge/Version-1.0-blue) ![License](https://img.shields.io/badge/License-MIT-green)
 
-## ✨ Features
+## âœ¨ Features
 
-### 🔐 Authentication & Role-Based Access
+### ðŸ” Authentication & Role-Based Access
 - Secure login/logout system
 - Role-based access control (Admin, Warden, Student)
 - Session management using LocalStorage
 - Protected routes based on user roles
 
-### 👥 Student Management
+### ðŸ‘¥ Student Management
 - Complete CRUD operations for student records
 - Student information including:
   - Personal details (Name, Email, Phone)
@@ -23,7 +23,7 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
 - Easy-to-use modal forms for adding/editing students
 - Real-time data updates
 
-### 🏠 Room & Bed Management
+### ðŸ  Room & Bed Management
 - Multi-block hostel structure (Block A, B, C)
 - Room occupancy tracking
 - Bed allocation system
@@ -31,7 +31,7 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
 - Total/Occupied/Available bed counts per room
 - Visual status indicators for room availability
 
-### 💰 Fees & Payment Tracking
+### ðŸ’° Fees & Payment Tracking
 - Payment record management
 - Receipt generation with unique IDs
 - Multiple payment methods (UPI, Bank Transfer, Cash)
@@ -39,7 +39,7 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
 - Monthly revenue calculations
 - Student-wise fee status monitoring
 
-### 📝 Complaint Management System
+### ðŸ“ Complaint Management System
 - Students can submit complaints
 - Multiple complaint categories:
   - Maintenance
@@ -52,7 +52,7 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
 - Admin/Warden can update complaint status
 - Complete complaint history
 
-### 👤 Visitor Log System
+### ðŸ‘¤ Visitor Log System
 - Visitor registration and tracking
 - Check-in/Check-out time recording
 - Visitor information:
@@ -62,7 +62,7 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
   - Visit date and duration
 - Complete visitor history
 
-### 📊 Dashboard & Analytics
+### ðŸ“Š Dashboard & Analytics
 - Real-time statistics:
   - Total students count
   - Available/Occupied beds
@@ -72,7 +72,7 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
 - Role-specific dashboard views
 - Visual stat cards with icons
 
-## 🚀 Getting Started
+## ðŸš€ Getting Started
 
 ### Prerequisites
 - A modern web browser (Chrome, Firefox, Safari, Edge)
@@ -94,42 +94,30 @@ A comprehensive, modern web-based Hostel Management System (HMS) built with vani
    Visit `http://localhost:3000`.
 
 4. **Login**
-   Use the demo credentials provided on the login page.
+   Use credentials issued by the hostel administrator.
 
 ### Backend Notes
 - `server.js` serves the frontend and provides REST APIs under `/api`.
 - `db.json` is created automatically on first run and stores students, rooms, payments, complaints, visitors, and users.
 - No external npm packages are required.
 
-## 🔑 Demo Credentials
 
-### Admin Access
-- **Email:** admin@hostel.com
-- **Password:** admin123
-- **Access:** Full system access including dashboard, students, rooms, fees, complaints, visitors, and user access review
+## Access
 
-### Warden Access
-- **Email:** warden@hostel.com
-- **Password:** warden123
-- **Access:** Operational access to dashboard, students, rooms, complaints, and visitors. Warden cannot access finance or user administration.
+Credentials are managed by the hostel administrator. Do not publish shared demo passwords on a hosted deployment.
 
-### Student Access
-- **Email:** raj.kumar@example.com
-- **Password:** student123
-- **Access:** Student dashboard, personal profile, own fee records, own complaints, and own visitor records.
-
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
 hostel-management/
-├── index.html              # Main HTML file
-├── css/
-│   └── style.css          # All styling and design
-├── js/
-│   ├── data.js            # Data layer and LocalStorage management
-│   ├── auth.js            # Authentication and session management
-│   └── app.js             # Main application logic and UI
-└── README.md              # This file
+â”œâ”€â”€ index.html              # Main HTML file
+â”œâ”€â”€ css/
+â”‚   â””â”€â”€ style.css          # All styling and design
+â”œâ”€â”€ js/
+â”‚   â”œâ”€â”€ data.js            # Data layer and LocalStorage management
+â”‚   â”œâ”€â”€ auth.js            # Authentication and session management
+â”‚   â””â”€â”€ app.js             # Main application logic and UI
+â””â”€â”€ README.md              # This file
 ```
 
 ### Code Architecture
@@ -173,7 +161,7 @@ hostel-management/
 - Event listeners
 - UI updates
 
-## 🎨 Design Features
+## ðŸŽ¨ Design Features
 
 ### Modern UI/UX
 - **Clean Interface:** Minimal, professional design
@@ -191,7 +179,7 @@ hostel-management/
 - **Status Badges:** Visual status indicators
 - **Table Views:** Easy-to-read data tables
 
-## 💾 Data Persistence
+## ðŸ’¾ Data Persistence
 
 The application uses **LocalStorage** for data persistence:
 
@@ -208,7 +196,7 @@ The application uses **LocalStorage** for data persistence:
 - **Persistence:** Data persists across browser sessions
 - **Reset:** Clear browser's LocalStorage to reset data
 
-## 🔒 Security Considerations
+## ðŸ”’ Security Considerations
 
 > [!WARNING]
 > **This is a demo application. For production use, implement the following security measures:**
@@ -233,7 +221,7 @@ The application uses **LocalStorage** for data persistence:
    - Validate permissions server-side
    - Add audit logging
 
-## 🛠️ Customization
+## ðŸ› ï¸ Customization
 
 ### Adding New Features
 
@@ -259,15 +247,15 @@ Edit these constants in the respective files:
 - **Payment Methods:** Modify payment method options in fee tracking
 - **Dashboard Stats:** Customize calculations in `getDashboardStats()`
 
-## 📱 Browser Compatibility
+## ðŸ“± Browser Compatibility
 
-- ✅ Chrome (Recommended)
-- ✅ Firefox
-- ✅ Safari
-- ✅ Edge
-- ⚠️ IE11 (Limited support - requires polyfills)
+- âœ… Chrome (Recommended)
+- âœ… Firefox
+- âœ… Safari
+- âœ… Edge
+- âš ï¸ IE11 (Limited support - requires polyfills)
 
-## 🐛 Known Limitations
+## ðŸ› Known Limitations
 
 1. **No Backend:** All data is stored in browser LocalStorage
 2. **Single User:** No multi-user collaboration support
@@ -275,7 +263,7 @@ Edit these constants in the respective files:
 4. **Limited Validation:** Basic client-side validation only
 5. **No Reports:** PDF/Excel export functionality not included
 
-## 🔄 Future Enhancements
+## ðŸ”„ Future Enhancements
 
 - [ ] Backend integration (Node.js/Express)
 - [ ] Database integration (PostgreSQL/MongoDB)
@@ -288,7 +276,7 @@ Edit these constants in the respective files:
 - [ ] Mess menu management
 - [ ] Leave application system
 
-## 📄 License
+## ðŸ“„ License
 
 This project is licensed under the MIT License - see below for details:
 
@@ -303,7 +291,7 @@ copies of the Software, and to permit persons to whom the Software is
 furnished to do so.
 ```
 
-## 👥 Contributing
+## ðŸ‘¥ Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -313,13 +301,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 💬 Support
+## ðŸ’¬ Support
 
 For support, questions, or suggestions:
 - Create an issue in the repository
 - Contact the development team
 
-## 🙏 Acknowledgments
+## ðŸ™ Acknowledgments
 
 - Icons: Unicode Emoji
 - Design Inspiration: Modern SaaS applications
@@ -327,6 +315,6 @@ For support, questions, or suggestions:
 
 ---
 
-**Built with ❤️ for educational purposes**
+**Built with â¤ï¸ for educational purposes**
 
 *Last Updated: December 2024*

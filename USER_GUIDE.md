@@ -15,7 +15,7 @@
    - You'll be greeted with the login page
 
 2. **Choose Your Role**
-   - Use the appropriate credentials based on your role (see [Demo Credentials](#demo-credentials))
+   - Use credentials issued by the hostel administrator.
 
 3. **Navigate the Dashboard**
    - After login, you'll see the dashboard with key statistics
@@ -25,22 +25,22 @@
 
 #### 👨‍💼 Admin
 ```
-Email: admin@hostel.com
-Password: admin123
+Email: Provided by administrator
+Password: Provided by administrator
 ```
 **Capabilities:** Full access to all features
 
 #### 🏫 Warden
 ```
-Email: warden@hostel.com
-Password: warden123
+Email: Provided by administrator
+Password: Provided by administrator
 ```
 **Capabilities:** Manage students, rooms, fees, complaints, and visitors
 
 #### 🎓 Student
 ```
-Email: raj.kumar@example.com
-Password: student123
+Email: Provided by administrator
+Password: Provided by administrator
 ```
 **Capabilities:** View dashboard, submit complaints, view visitor logs
 

@@ -176,22 +176,7 @@ class App {
 
           <div class="auth-header">
             <h2 class="auth-title login-title">Login</h2>
-            <p class="auth-subtitle">Use your approved account credentials to continue.</p>
-          </div>
-
-          <div class="quick-login-grid demo-login-grid">
-            <button type="button" class="quick-login" data-email="admin@hostel.com" data-password="admin123">
-              <strong>Admin</strong>
-              <span>Demo fill</span>
-            </button>
-            <button type="button" class="quick-login" data-email="warden@hostel.com" data-password="warden123">
-              <strong>Warden</strong>
-              <span>Demo fill</span>
-            </button>
-            <button type="button" class="quick-login" data-email="raj.kumar@example.com" data-password="student123">
-              <strong>Student</strong>
-              <span>Demo fill</span>
-            </button>
+            <p class="auth-subtitle">Use credentials issued by the hostel office to continue.</p>
           </div>
 
           <form id="loginForm">
@@ -2189,15 +2174,6 @@ class App {
     }
 
     attachLoginHandlers() {
-        document.querySelectorAll('.quick-login').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.quick-login').forEach(item => item.classList.remove('active'));
-                button.classList.add('active');
-                document.getElementById('loginEmail').value = button.dataset.email;
-                document.getElementById('loginPassword').value = button.dataset.password;
-            });
-        });
-
         document.getElementById('togglePassword')?.addEventListener('click', (e) => {
             const passwordInput = document.getElementById('loginPassword');
             const isPassword = passwordInput.type === 'password';
