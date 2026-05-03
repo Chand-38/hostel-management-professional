@@ -1,6 +1,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const net = require('net');
+const tls = require('tls');
 const { createHash, randomUUID } = require('crypto');
 
 const PORT = process.env.PORT || 3000;
@@ -242,8 +244,117 @@ function ensureCollections(db) {
   return db;
 }
 
+function extractEmailAddress(value = '') {
+  const match = String(value).match(/<([^>]+)>/);
+  return (match ? match[1] : value).trim();
+}
+
+function normalizeMailBody(value = '') {
+  return String(value).replace(/\r?\n/g, '\r\n').replace(/^\./gm, '..');
+}
+
+function smtpRead(socket) {
+  return new Promise((resolve, reject) => {
+    let buffer = '';
+    const cleanup = () => {
+      socket.off('data', onData);
+      socket.off('error', onError);
+    };
+    const onError = (error) => {
+      cleanup();
+      reject(error);
+    };
+    const onData = (chunk) => {
+      buffer += chunk.toString('utf8');
+      const lines = buffer.split(/\r?\n/).filter(Boolean);
+      const last = lines[lines.length - 1] || '';
+      if (/^\d{3}\s/.test(last)) {
+        cleanup();
+        resolve(buffer);
+      }
+    };
+    socket.on('data', onData);
+    socket.on('error', onError);
+  });
+}
+
+async function smtpCommand(socket, command, expectedCodes = []) {
+  if (command) socket.write(`${command}\r\n`);
+  const response = await smtpRead(socket);
+  const code = Number(response.slice(0, 3));
+  if (expectedCodes.length && !expectedCodes.includes(code)) {
+    throw new Error(`SMTP command failed (${code}): ${response.trim()}`);
+  }
+  return response;
+}
+
+function createSmtpSocket({ host, port, secure }) {
+  return new Promise((resolve, reject) => {
+    const socket = secure
+      ? tls.connect({ host, port, servername: host }, () => resolve(socket))
+      : net.connect({ host, port }, () => resolve(socket));
+    socket.once('error', reject);
+    socket.setTimeout(20000, () => {
+      socket.destroy();
+      reject(new Error('SMTP connection timed out'));
+    });
+  });
+}
+
+async function sendSmtpEmail({ to, from, subject, text, html }) {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 465);
+  const secure = String(process.env.SMTP_SECURE || 'true') === 'true';
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS are required');
+
+  const socket = await createSmtpSocket({ host, port, secure });
+  const fromAddress = extractEmailAddress(from) || user;
+  const boundary = `hostelpro-${randomUUID()}`;
+  const message = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    '',
+    text,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    '',
+    html || `<p>${escapeHtml(text)}</p>`,
+    '',
+    `--${boundary}--`
+  ].join('\r\n');
+
+  try {
+    await smtpCommand(socket, null, [220]);
+    await smtpCommand(socket, `EHLO ${process.env.SMTP_HELO || 'hostelpro.local'}`, [250]);
+    await smtpCommand(socket, 'AUTH LOGIN', [334]);
+    await smtpCommand(socket, Buffer.from(user).toString('base64'), [334]);
+    await smtpCommand(socket, Buffer.from(pass).toString('base64'), [235]);
+    await smtpCommand(socket, `MAIL FROM:<${fromAddress}>`, [250]);
+    await smtpCommand(socket, `RCPT TO:<${to}>`, [250, 251]);
+    await smtpCommand(socket, 'DATA', [354]);
+    socket.write(`${normalizeMailBody(message)}\r\n.\r\n`);
+    await smtpRead(socket);
+    await smtpCommand(socket, 'QUIT', [221]);
+  } finally {
+    socket.end();
+  }
+}
+
 async function sendAppEmail({ to, subject, text, html }) {
-  const from = process.env.MAIL_FROM || 'HostelPro <onboarding@resend.dev>';
+  const from = process.env.MAIL_FROM || `HostelPro <${process.env.SMTP_USER || 'onboarding@resend.dev'}>`;
+  if (process.env.SMTP_HOST) {
+    await sendSmtpEmail({ to, from, subject, text, html });
+    return true;
+  }
   if (process.env.RESEND_API_KEY) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',

@@ -108,7 +108,18 @@ Credentials are managed by the hostel administrator. Do not publish shared demo 
 
 ## Email Setup
 
-Registration verification, password reset, and approval emails use Resend when configured:
+Registration verification, password reset, and approval emails use Gmail SMTP or Resend when configured.
+
+For Gmail SMTP, set these Railway variables:
+
+- `SMTP_HOST`: `smtp.gmail.com`
+- `SMTP_PORT`: `465`
+- `SMTP_SECURE`: `true`
+- `SMTP_USER`: Gmail address used for sending
+- `SMTP_PASS`: Google App Password for that Gmail account
+- `MAIL_FROM`: sender label, for example `HostelPro <veriffy.hms@gmail.com>`
+
+Alternatively, Resend is also supported:
 
 - `RESEND_API_KEY`: API key from Resend
 - `MAIL_FROM`: verified sender, for example `HostelPro <noreply@yourdomain.com>`
