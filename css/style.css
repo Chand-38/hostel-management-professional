@@ -808,7 +808,10 @@ tbody tr:hover {
 }
 
 .mobile-topbar,
-.mobile-backdrop,
+.mobile-backdrop {
+    display: none;
+}
+
 .sidebar-close {
     display: none !important;
 }
@@ -2377,6 +2380,10 @@ tbody tr:hover {
 @media (max-width: 768px) {
     .pro-sidebar {
         z-index: 1001;
+    }
+
+    .pro-sidebar .sidebar-close {
+        display: inline-flex !important;
     }
 
     .auth-highlights,
