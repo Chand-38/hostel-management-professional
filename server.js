@@ -243,6 +243,85 @@ function ensureCollections(db) {
   return db;
 }
 
+function createStudentProfileFromUser(db, user) {
+  const defaultHostelId = user.hostelId || db.hostels[0]?.id || 'h1';
+  return {
+    id: randomUUID(),
+    hostelId: defaultHostelId,
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    guardianName: user.guardianName || '',
+    guardianPhone: user.guardianPhone || '',
+    hostelBlock: user.hostelBlock || '',
+    roomNumber: user.roomNumber || '',
+    bedNumber: user.bedNumber || '',
+    joiningDate: user.approvedAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+    feeStatus: 'Pending',
+    status: 'Active',
+    photo: '',
+    profileIncomplete: true
+  };
+}
+
+function ensureStudentProfileForUser(db, user) {
+  if (!user || user.role !== 'student' || user.status !== 'Approved') return false;
+
+  const existingStudent = db.students.find(student => (
+    (user.studentId && student.id === user.studentId) ||
+    (student.email && user.email && student.email.toLowerCase() === user.email.toLowerCase())
+  ));
+
+  if (existingStudent) {
+    const updates = {
+      name: existingStudent.name || user.name || '',
+      email: existingStudent.email || user.email || '',
+      hostelId: existingStudent.hostelId || user.hostelId || db.hostels[0]?.id || 'h1',
+      status: existingStudent.status || 'Active'
+    };
+    Object.assign(existingStudent, updates);
+    if (user.studentId !== existingStudent.id) {
+      user.studentId = existingStudent.id;
+      return true;
+    }
+    return false;
+  }
+
+  const student = createStudentProfileFromUser(db, user);
+  db.students.push(student);
+  user.studentId = student.id;
+  user.hostelId = user.hostelId || student.hostelId;
+  return true;
+}
+
+function syncApprovedStudentUsers(db) {
+  let changed = false;
+  db.users.forEach(user => {
+    if (ensureStudentProfileForUser(db, user)) changed = true;
+  });
+  return changed;
+}
+
+function linkStudentProfileToUser(db, student) {
+  if (!student?.email) return false;
+  const user = db.users.find(entry => (
+    entry.role === 'student' &&
+    entry.email &&
+    entry.email.toLowerCase() === student.email.toLowerCase()
+  ));
+  if (!user) return false;
+
+  const updates = {
+    studentId: student.id,
+    name: student.name || user.name,
+    email: student.email,
+    hostelId: student.hostelId || user.hostelId
+  };
+  const changed = Object.entries(updates).some(([key, value]) => user[key] !== value);
+  Object.assign(user, updates);
+  return changed;
+}
+
 async function sendSmtpEmail({ to, from, subject, text, html }) {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 465);
@@ -547,6 +626,7 @@ function routeCollection(req, res, key, pathname) {
         item.date = new Date().toISOString().slice(0, 10);
       }
       db[key].push(item);
+      if (key === 'students') linkStudentProfileToUser(db, item);
       writeDatabase(db);
       sendJson(res, 201, item);
     });
@@ -557,6 +637,7 @@ function routeCollection(req, res, key, pathname) {
       const index = db[key].findIndex(item => item.id === id);
       if (index === -1) return sendJson(res, 404, { message: 'Record not found' });
       db[key][index] = { ...db[key][index], ...payload, id };
+      if (key === 'students') linkStudentProfileToUser(db, db[key][index]);
       writeDatabase(db);
       sendJson(res, 200, db[key][index]);
     });
@@ -576,6 +657,7 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/bootstrap' && req.method === 'GET') {
     const db = ensureCollections(readDatabase());
+    if (syncApprovedStudentUsers(db)) writeDatabase(db);
     return sendJson(res, 200, {
       ...db,
       users: db.users.map(publicUser)
@@ -844,6 +926,9 @@ async function handleApi(req, res, pathname) {
       if (index === -1) return sendJson(res, 404, { message: 'User not found' });
       const previousStatus = db.users[index].status;
       db.users[index] = { ...db.users[index], ...payload, id };
+      if (db.users[index].role === 'student' && db.users[index].status === 'Approved') {
+        ensureStudentProfileForUser(db, db.users[index]);
+      }
       writeDatabase(db);
       if (previousStatus !== 'Approved' && db.users[index].status === 'Approved') {
         try {

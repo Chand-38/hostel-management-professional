@@ -109,6 +109,11 @@ class DataStore {
         }
     }
 
+    async refresh() {
+        await this.initializeData();
+        return this.state;
+    }
+
     normalizeData(data) {
         const state = { ...initialData, ...data };
         state.hostels = Array.isArray(state.hostels) && state.hostels.length ? state.hostels : initialData.hostels;

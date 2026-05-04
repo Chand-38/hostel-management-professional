@@ -2013,6 +2013,7 @@ class App {
 
     async approveUser(id) {
         await dataStore.updateUser(id, { status: 'Approved', approvedAt: new Date().toISOString() });
+        await dataStore.refresh();
         this.loadUsers();
     }
 
