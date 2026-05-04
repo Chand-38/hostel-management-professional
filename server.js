@@ -322,6 +322,21 @@ function linkStudentProfileToUser(db, student) {
   return changed;
 }
 
+function isApprovedPayment(payment) {
+  return ['Approved', 'Completed'].includes(payment?.status);
+}
+
+function updateStudentFeeStatusFromPayments(db, studentId) {
+  if (!studentId) return false;
+  const student = db.students.find(item => item.id === studentId);
+  if (!student) return false;
+  const hasApprovedPayment = db.payments.some(payment => payment.studentId === studentId && isApprovedPayment(payment));
+  const nextStatus = hasApprovedPayment ? 'Paid' : 'Pending';
+  if (student.feeStatus === nextStatus) return false;
+  student.feeStatus = nextStatus;
+  return true;
+}
+
 async function sendSmtpEmail({ to, from, subject, text, html }) {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 465);
@@ -446,7 +461,7 @@ function readBody(req) {
     let body = '';
     req.on('data', chunk => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 5_000_000) {
         req.destroy();
         reject(new Error('Request body is too large'));
       }
@@ -625,8 +640,13 @@ function routeCollection(req, res, key, pathname) {
       if (key === 'visitors') {
         item.date = new Date().toISOString().slice(0, 10);
       }
+      if (key === 'payments') {
+        item.status = item.status || 'Pending';
+        item.submittedAt = item.submittedAt || new Date().toISOString();
+      }
       db[key].push(item);
       if (key === 'students') linkStudentProfileToUser(db, item);
+      if (key === 'payments') updateStudentFeeStatusFromPayments(db, item.studentId);
       writeDatabase(db);
       sendJson(res, 201, item);
     });
@@ -638,13 +658,21 @@ function routeCollection(req, res, key, pathname) {
       if (index === -1) return sendJson(res, 404, { message: 'Record not found' });
       db[key][index] = { ...db[key][index], ...payload, id };
       if (key === 'students') linkStudentProfileToUser(db, db[key][index]);
+      if (key === 'payments') {
+        if (payload.status === 'Approved' || payload.status === 'Rejected') {
+          db[key][index].reviewedAt = new Date().toISOString();
+        }
+        updateStudentFeeStatusFromPayments(db, db[key][index].studentId);
+      }
       writeDatabase(db);
       sendJson(res, 200, db[key][index]);
     });
   }
 
   if (req.method === 'DELETE' && id) {
+    const existing = db[key].find(item => item.id === id);
     db[key] = db[key].filter(item => item.id !== id);
+    if (key === 'payments') updateStudentFeeStatusFromPayments(db, existing?.studentId);
     writeDatabase(db);
     return sendJson(res, 200, { success: true });
   }
@@ -750,7 +778,10 @@ async function handleApi(req, res, pathname) {
     const id = url.searchParams.get('id');
     const payment = db.payments.find(item => item.id === id);
     if (!payment) return sendJson(res, 404, { message: 'Receipt not found' });
-    const receipt = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(payment.receipt)}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#111827}.receipt{max-width:720px;margin:auto;border:1px solid #cbd5e1;padding:28px;border-radius:12px}h1{color:#1e40af}.row{display:flex;justify-content:space-between;border-bottom:1px solid #e5e7eb;padding:10px 0}</style></head><body><div class="receipt"><h1>Hostel Fee Receipt</h1><div class="row"><strong>Receipt</strong><span>${escapeHtml(payment.receipt)}</span></div><div class="row"><strong>Student</strong><span>${escapeHtml(payment.studentName)}</span></div><div class="row"><strong>Amount</strong><span>Rs. ${escapeHtml(payment.amount)}</span></div><div class="row"><strong>Date</strong><span>${escapeHtml(formatDisplayDate(payment.paymentDate))}</span></div><div class="row"><strong>Method</strong><span>${escapeHtml(payment.paymentMethod)}</span></div><div class="row"><strong>Status</strong><span>${escapeHtml(payment.status)}</span></div></div><script>window.print()</script></body></html>`;
+    const proofBlock = payment.receiptProof?.startsWith('data:image/')
+      ? `<div class="proof"><strong>Uploaded proof</strong><img src="${payment.receiptProof}" alt="Payment proof"></div>`
+      : '';
+    const receipt = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(payment.receipt)}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#111827}.receipt{max-width:720px;margin:auto;border:1px solid #cbd5e1;padding:28px;border-radius:12px}h1{color:#1e40af}.row{display:flex;justify-content:space-between;border-bottom:1px solid #e5e7eb;padding:10px 0}.proof{margin-top:20px}.proof img{display:block;max-width:100%;margin-top:10px;border:1px solid #e5e7eb;border-radius:8px}</style></head><body><div class="receipt"><h1>Hostel Fee Receipt</h1><div class="row"><strong>Receipt</strong><span>${escapeHtml(payment.receipt)}</span></div><div class="row"><strong>Student</strong><span>${escapeHtml(payment.studentName)}</span></div><div class="row"><strong>Amount</strong><span>Rs. ${escapeHtml(payment.amount)}</span></div><div class="row"><strong>Date</strong><span>${escapeHtml(formatDisplayDate(payment.paymentDate))}</span></div><div class="row"><strong>Method</strong><span>${escapeHtml(payment.paymentMethod)}</span></div><div class="row"><strong>Status</strong><span>${escapeHtml(payment.status)}</span></div><div class="row"><strong>Reviewed By</strong><span>${escapeHtml(payment.reviewedBy || 'Pending review')}</span></div>${proofBlock}</div><script>window.print()</script></body></html>`;
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(receipt);
   }

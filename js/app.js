@@ -66,12 +66,13 @@ class App {
 
         const requestMap = {
             leave: dataStore.getLeaveRequests(),
-            'room-requests': dataStore.getRoomRequests()
+            'room-requests': dataStore.getRoomRequests(),
+            fees: dataStore.getPayments()
         };
         const requests = requestMap[route];
         if (!requests) return '';
 
-        const pendingCount = requests.filter(request => request.status === 'Pending' && this.isInHostelScope(request)).length;
+        const pendingCount = requests.filter(request => (request.status || 'Pending') === 'Pending' && this.isInHostelScope(request)).length;
         if (!pendingCount) return '';
 
         return `<span class="nav-alert-badge" aria-label="${pendingCount} pending requests">${pendingCount}</span>`;
@@ -382,6 +383,16 @@ class App {
         return day && month && year ? `${day}-${month}-${year}` : value;
     }
 
+    readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            if (!file) return resolve('');
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Unable to read receipt file'));
+            reader.readAsDataURL(file);
+        });
+    }
+
     addMonths(date, months) {
         const copy = new Date(date);
         copy.setMonth(copy.getMonth() + months);
@@ -580,7 +591,7 @@ class App {
                 .filter(payment => {
                     const paymentDate = new Date(payment.paymentDate);
                     const now = new Date();
-                    return paymentDate.getMonth() === now.getMonth() && paymentDate.getFullYear() === now.getFullYear();
+                    return ['Approved', 'Completed'].includes(payment.status) && paymentDate.getMonth() === now.getMonth() && paymentDate.getFullYear() === now.getFullYear();
                 })
                 .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
         };
@@ -1411,14 +1422,19 @@ class App {
         const user = authManager.getCurrentUser();
         const payments = this.visiblePayments();
         const students = this.visibleStudents();
-        const canRecord = user.role === 'admin';
+        const isStudent = user.role === 'student';
+        const canRecord = user.role === 'admin' || isStudent;
+        const canReview = user.role === 'admin';
+        const studentOptions = isStudent
+            ? students.filter(student => student.id === this.getCurrentStudent()?.id)
+            : students;
 
         const content = `
       <div class="content-wrapper">
         ${this.pageHeader(
             user.role === 'student' ? 'My Fee Records' : 'Fees & Payments',
-            user.role === 'student' ? 'View your recorded hostel payments and current fee status.' : 'Record and audit hostel fee collections.',
-            `${canRecord ? '<button class="btn btn-primary" id="addPaymentBtn">Record Payment</button>' : ''}<input class="form-control table-search" placeholder="Search fees..." oninput="app.filterTable(this.value)">`
+            user.role === 'student' ? 'Submit payment proof and track approval status.' : 'Review student payment proofs and approve verified fees.',
+            `${canRecord ? `<button class="btn btn-primary" id="addPaymentBtn">${isStudent ? 'Submit Payment Proof' : 'Record Payment'}</button>` : ''}<input class="form-control table-search" placeholder="Search fees..." oninput="app.filterTable(this.value)">`
         )}
 
         <div class="card filterable-table">
@@ -1432,7 +1448,9 @@ class App {
                   <th>Date</th>
                   <th>Method</th>
                   <th>Status</th>
+                  <th>Proof</th>
                   <th>Receipt</th>
+                  ${canReview ? '<th>Action</th>' : ''}
                 </tr>
               </thead>
               <tbody>
@@ -1443,8 +1461,17 @@ class App {
                     <td>${this.formatCurrency(payment.amount)}</td>
                     <td>${new Date(payment.paymentDate).toLocaleDateString()}</td>
                     <td>${payment.paymentMethod}</td>
-                    <td><span class="badge badge-success">${payment.status}</span></td>
+                    <td><span class="badge ${this.paymentStatusBadge(payment.status)}">${payment.status || 'Pending'}</span></td>
+                    <td>${payment.receiptProof ? `<a class="btn btn-sm btn-outline" href="${payment.receiptProof}" target="_blank">View Proof</a>` : '<span class="text-muted">No proof</span>'}</td>
                     <td><a class="btn btn-sm btn-outline" href="/api/payments/receipt?id=${payment.id}" target="_blank">Download</a></td>
+                    ${canReview ? `
+                      <td class="table-actions">
+                        ${(payment.status || 'Pending') === 'Pending' ? `
+                          <button class="btn btn-sm btn-success" onclick="app.reviewPayment('${payment.id}', 'Approved')">Approve</button>
+                          <button class="btn btn-sm btn-danger" onclick="app.reviewPayment('${payment.id}', 'Rejected')">Reject</button>
+                        ` : '<span class="text-muted">Reviewed</span>'}
+                      </td>
+                    ` : ''}
                   </tr>
                 `).join('')}
               </tbody>
@@ -1456,7 +1483,7 @@ class App {
         <div class="modal" id="paymentModal">
           <div class="modal-content">
             <div class="modal-header">
-              <h3 class="modal-title">Record Payment</h3>
+              <h3 class="modal-title">${isStudent ? 'Submit Payment Proof' : 'Record Payment'}</h3>
               <button class="modal-close" id="closePaymentModal">x</button>
             </div>
             <div class="modal-body">
@@ -1464,7 +1491,7 @@ class App {
                 <div class="form-group">
                   <label class="form-label">Student *</label>
                   <select class="form-control" id="paymentStudentId" required>
-                    ${students.map(student => `<option value="${student.id}">${student.name}</option>`).join('')}
+                    ${studentOptions.map(student => `<option value="${student.id}">${student.name}</option>`).join('')}
                   </select>
                 </div>
                 <div class="form-row">
@@ -1488,15 +1515,20 @@ class App {
                     </select>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Receipt *</label>
+                    <label class="form-label">Receipt / Transaction ID *</label>
                     <input type="text" class="form-control" id="paymentReceipt" required>
                   </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Upload Receipt Proof *</label>
+                  <input type="file" class="form-control" id="paymentReceiptProof" accept="image/*,application/pdf" required>
+                  <span class="muted-cell">Upload payment screenshot, receipt photo, or PDF. Max 3 MB.</span>
                 </div>
               </form>
             </div>
             <div class="modal-footer">
               <button class="btn btn-secondary" id="cancelPaymentForm">Cancel</button>
-              <button class="btn btn-primary" id="savePayment">Save Payment</button>
+              <button class="btn btn-primary" id="savePayment">${isStudent ? 'Submit for Approval' : 'Save for Review'}</button>
             </div>
           </div>
         </div>
@@ -1988,6 +2020,12 @@ class App {
 
     statusBadge(status) {
         return status === 'Resolved' ? 'badge-success' : status === 'In Progress' ? 'badge-warning' : 'badge-danger';
+    }
+
+    paymentStatusBadge(status = 'Pending') {
+        if (['Approved', 'Completed'].includes(status)) return 'badge-success';
+        if (status === 'Rejected') return 'badge-danger';
+        return 'badge-warning';
     }
 
     userStatusBadge(status = 'Approved') {
@@ -2637,19 +2675,46 @@ class App {
             if (!form.reportValidity()) return;
             const studentId = document.getElementById('paymentStudentId').value;
             const student = dataStore.getStudentById(studentId);
+            const proofFile = document.getElementById('paymentReceiptProof').files[0];
+            if (proofFile && proofFile.size > 3 * 1024 * 1024) {
+                alert('Receipt proof must be under 3 MB.');
+                return;
+            }
+            const receiptProof = await this.readFileAsDataUrl(proofFile);
             await dataStore.addPayment({
                 studentId,
                 studentName: student.name,
+                hostelId: student.hostelId,
                 amount: Number(document.getElementById('paymentAmount').value),
                 paymentDate: document.getElementById('paymentDate').value,
                 paymentMethod: document.getElementById('paymentMethod').value,
-                status: 'Completed',
-                receipt: document.getElementById('paymentReceipt').value.trim()
+                status: 'Pending',
+                receipt: document.getElementById('paymentReceipt').value.trim(),
+                receiptProof,
+                submittedBy: authManager.getCurrentUser().name,
+                submittedAt: new Date().toISOString()
             });
-            await dataStore.updateStudent(studentId, { feeStatus: 'Paid' });
             modal.classList.remove('active');
             this.loadFees();
         });
+    }
+
+    async reviewPayment(id, status) {
+        const user = authManager.getCurrentUser();
+        const payment = dataStore.getPayments().find(item => item.id === id);
+        if (!payment) return;
+        const remark = prompt(`Add ${status.toLowerCase()} remark`, status === 'Approved' ? 'Payment verified by hostel office' : 'Payment proof rejected') || '';
+        await dataStore.updatePayment(id, {
+            status,
+            staffRemark: remark,
+            reviewedBy: user.name,
+            reviewedAt: new Date().toISOString()
+        });
+        if (status === 'Approved') {
+            await dataStore.updateStudent(payment.studentId, { feeStatus: 'Paid' });
+        }
+        await dataStore.refresh();
+        this.loadFees();
     }
 
     attachComplaintHandlers() {

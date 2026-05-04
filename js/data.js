@@ -289,6 +289,10 @@ class DataStore {
         return this.createRecord('payments', payment);
     }
 
+    updatePayment(id, updatedData) {
+        return this.updateRecord('payments', id, updatedData);
+    }
+
     getComplaints() {
         return this.getCollection('complaints');
     }
