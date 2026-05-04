@@ -30,6 +30,19 @@ function loadLocalEnv() {
 
 loadLocalEnv();
 
+function stripOuterQuotes(value) {
+  const text = String(value || '').trim();
+  const quote = text[0];
+  if ((quote === '"' || quote === "'") && text.endsWith(quote)) {
+    return text.slice(1, -1);
+  }
+  return text;
+}
+
+function getEnvValue(name) {
+  return stripOuterQuotes(process.env[name]);
+}
+
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const DB_FILE = path.join(ROOT, 'db.json');
@@ -364,11 +377,11 @@ function updateStudentFeeStatusFromPayments(db, studentId) {
 }
 
 async function sendSmtpEmail({ to, from, subject, text, html }) {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 465);
-  const secure = String(process.env.SMTP_SECURE || 'true') === 'true';
-  const user = process.env.SMTP_USER;
-  const pass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
+  const host = getEnvValue('SMTP_HOST');
+  const port = Number(getEnvValue('SMTP_PORT') || 465);
+  const secure = String(getEnvValue('SMTP_SECURE') || 'true') === 'true';
+  const user = getEnvValue('SMTP_USER');
+  const pass = getEnvValue('SMTP_PASS').replace(/\s+/g, '');
   if (!host || !user || !pass) throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS are required');
 
   const transporter = nodemailer.createTransport({
@@ -391,16 +404,16 @@ async function sendSmtpEmail({ to, from, subject, text, html }) {
 }
 
 async function sendAppEmail({ to, subject, text, html }) {
-  const from = process.env.MAIL_FROM || `HostelPro <${process.env.SMTP_USER || 'onboarding@resend.dev'}>`;
-  if (process.env.SMTP_HOST) {
+  const from = getEnvValue('MAIL_FROM') || `HostelPro <${getEnvValue('SMTP_USER') || 'onboarding@resend.dev'}>`;
+  if (getEnvValue('SMTP_HOST')) {
     await sendSmtpEmail({ to, from, subject, text, html });
     return true;
   }
-  if (process.env.RESEND_API_KEY) {
+  if (getEnvValue('RESEND_API_KEY')) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        Authorization: `Bearer ${getEnvValue('RESEND_API_KEY')}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ from, to, subject, text, html })
@@ -421,6 +434,16 @@ async function sendAppEmail({ to, subject, text, html }) {
   return true;
 }
 
+function logEmailError(context, error) {
+  console.error(context, {
+    code: error?.code,
+    command: error?.command,
+    responseCode: error?.responseCode,
+    response: error?.response,
+    message: error?.message
+  });
+}
+
 function getEmailFailureMessage(error) {
   const detail = [
     error?.code,
@@ -430,8 +453,14 @@ function getEmailFailureMessage(error) {
     error?.message
   ].filter(Boolean).join(' ');
 
-  if (/EAUTH|535|Username and Password not accepted|BadCredentials/i.test(detail)) {
+  if (/SMTP_HOST, SMTP_USER, and SMTP_PASS are required|Missing credentials/i.test(detail)) {
+    return 'SMTP variables are incomplete. Check SMTP_HOST, SMTP_USER, and SMTP_PASS in Railway, then redeploy.';
+  }
+  if (/EAUTH|535|534|Username and Password not accepted|BadCredentials|Invalid login|Application-specific password required/i.test(detail)) {
     return 'Gmail rejected SMTP login. Generate a new Google App Password and update SMTP_PASS in Railway.';
+  }
+  if (/self signed|certificate|TLS|SSL|wrong version number|Greeting never received/i.test(detail)) {
+    return 'SMTP security settings look incorrect. For Gmail use SMTP_PORT=465 and SMTP_SECURE=true.';
   }
   if (/ETIMEDOUT|ECONNREFUSED|ECONNRESET|connection|timeout/i.test(detail)) {
     return 'Could not connect to Gmail SMTP. Check SMTP_HOST, SMTP_PORT, SMTP_SECURE, and redeploy.';
@@ -858,7 +887,7 @@ async function handleApi(req, res, pathname) {
         html: `<p>Hello ${escapeHtml(name)},</p><p>Your HostelPro verification code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
       });
     } catch (error) {
-      console.error('Could not send registration verification email.', error.message);
+      logEmailError('Could not send registration verification email.', error);
       return sendJson(res, 502, {
         success: false,
         message: getEmailFailureMessage(error)
@@ -913,7 +942,7 @@ async function handleApi(req, res, pathname) {
           html: `<p>Your HostelPro password reset code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
         });
       } catch (error) {
-        console.error('Could not send password reset email.', error.message);
+        logEmailError('Could not send password reset email.', error);
         return sendJson(res, 502, {
           success: false,
           message: getEmailFailureMessage(error)
