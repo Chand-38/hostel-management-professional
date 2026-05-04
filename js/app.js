@@ -2257,6 +2257,7 @@ class App {
 
     attachRegisterHandlers() {
         document.getElementById('sendRegisterCode')?.addEventListener('click', async (e) => {
+            const button = e.currentTarget;
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const errorEl = document.getElementById('registerError');
@@ -2266,18 +2267,19 @@ class App {
                 errorEl.classList.remove('hidden');
                 return;
             }
-            e.currentTarget.disabled = true;
-            e.currentTarget.textContent = 'Sending...';
+            button.disabled = true;
+            button.textContent = 'Sending...';
             const result = await authManager.sendRegisterCode(name, email);
             if (result.success) {
                 errorEl.textContent = result.message || 'Verification code sent to your email.';
                 errorEl.classList.remove('hidden');
+                button.textContent = 'Resend Code';
             } else {
                 errorEl.textContent = result.message;
                 errorEl.classList.remove('hidden');
+                button.textContent = 'Send Code';
             }
-            e.currentTarget.disabled = false;
-            e.currentTarget.textContent = 'Send Code';
+            button.disabled = false;
         });
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
@@ -2323,18 +2325,23 @@ class App {
         };
 
         document.getElementById('sendResetCode')?.addEventListener('click', async (e) => {
+            const button = e.currentTarget;
             const email = document.getElementById('resetEmail').value.trim();
             if (!email) {
                 showError('Enter your email before requesting a reset code.');
                 return;
             }
-            e.currentTarget.disabled = true;
-            e.currentTarget.textContent = 'Sending...';
+            button.disabled = true;
+            button.textContent = 'Sending...';
             const result = await authManager.requestPasswordReset(email);
-            if (result.success) showMessage(result.message);
-            else showError(result.message);
-            e.currentTarget.disabled = false;
-            e.currentTarget.textContent = 'Send Reset Code';
+            if (result.success) {
+                showMessage(result.message);
+                button.textContent = 'Resend Code';
+            } else {
+                showError(result.message);
+                button.textContent = 'Send Reset Code';
+            }
+            button.disabled = false;
         });
 
         document.getElementById('forgotPasswordForm')?.addEventListener('submit', async (e) => {

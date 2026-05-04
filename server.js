@@ -301,6 +301,24 @@ async function sendAppEmail({ to, subject, text, html }) {
   return true;
 }
 
+function getEmailFailureMessage(error) {
+  const detail = [
+    error?.code,
+    error?.command,
+    error?.responseCode,
+    error?.response,
+    error?.message
+  ].filter(Boolean).join(' ');
+
+  if (/EAUTH|535|Username and Password not accepted|BadCredentials/i.test(detail)) {
+    return 'Gmail rejected SMTP login. Generate a new Google App Password and update SMTP_PASS in Railway.';
+  }
+  if (/ETIMEDOUT|ECONNREFUSED|ECONNRESET|connection|timeout/i.test(detail)) {
+    return 'Could not connect to Gmail SMTP. Check SMTP_HOST, SMTP_PORT, SMTP_SECURE, and redeploy.';
+  }
+  return 'Email sending failed. Check SMTP variables and Gmail app password.';
+}
+
 function saveAuthCode(db, email, purpose) {
   const code = generateEmailCode();
   const now = new Date();
@@ -704,10 +722,10 @@ async function handleApi(req, res, pathname) {
       console.error('Could not send registration verification email.', error.message);
       return sendJson(res, 502, {
         success: false,
-        message: 'Email sending failed. Check SMTP variables and Gmail app password.'
+        message: getEmailFailureMessage(error)
       });
     }
-    return sendJson(res, 200, { success: true, message: 'Verification code sent to your email.' });
+    return sendJson(res, 200, { success: true, message: 'Verification code sent to your email. You can resend if it does not arrive.' });
   }
 
   if (pathname === '/api/auth/register' && req.method === 'POST') {
@@ -748,12 +766,20 @@ async function handleApi(req, res, pathname) {
     if (user) {
       const code = saveAuthCode(db, email, 'reset-password');
       writeDatabase(db);
-      await sendAppEmail({
-        to: email,
-        subject: 'HostelPro password reset code',
-        text: `Your HostelPro password reset code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`,
-        html: `<p>Your HostelPro password reset code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
-      });
+      try {
+        await sendAppEmail({
+          to: email,
+          subject: 'HostelPro password reset code',
+          text: `Your HostelPro password reset code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`,
+          html: `<p>Your HostelPro password reset code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_TTL_MINUTES} minutes.</p>`
+        });
+      } catch (error) {
+        console.error('Could not send password reset email.', error.message);
+        return sendJson(res, 502, {
+          success: false,
+          message: getEmailFailureMessage(error)
+        });
+      }
     }
     return sendJson(res, 200, {
       success: true,
