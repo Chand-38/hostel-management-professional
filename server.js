@@ -420,11 +420,36 @@ async function sendResendEmail({ to, from, subject, text, html }) {
   return true;
 }
 
+function getResendFromAddress() {
+  const configuredFrom = getEnvValue('MAIL_FROM');
+  if (!configuredFrom) return 'HostelPro <onboarding@resend.dev>';
+
+  const emailMatch = configuredFrom.match(/<([^>]+)>|([^\s<>]+@[^\s<>]+)/);
+  const email = (emailMatch?.[1] || emailMatch?.[2] || '').toLowerCase();
+  const domain = email.split('@')[1] || '';
+  const publicDomains = new Set([
+    'gmail.com',
+    'googlemail.com',
+    'yahoo.com',
+    'outlook.com',
+    'hotmail.com',
+    'live.com',
+    'icloud.com'
+  ]);
+
+  if (publicDomains.has(domain)) {
+    console.warn(`MAIL_FROM ${email} cannot be used with Resend until its domain is verified. Falling back to onboarding@resend.dev.`);
+    return 'HostelPro <onboarding@resend.dev>';
+  }
+  return configuredFrom;
+}
+
 async function sendAppEmail({ to, subject, text, html }) {
-  const from = getEnvValue('MAIL_FROM') || `HostelPro <${getEnvValue('SMTP_USER') || 'onboarding@resend.dev'}>`;
   if (getEnvValue('RESEND_API_KEY')) {
+    const from = getResendFromAddress();
     return sendResendEmail({ to, from, subject, text, html });
   }
+  const from = getEnvValue('MAIL_FROM') || `HostelPro <${getEnvValue('SMTP_USER') || 'onboarding@resend.dev'}>`;
   if (getEnvValue('SMTP_HOST')) {
     return sendSmtpEmail({ to, from, subject, text, html });
   }
