@@ -403,53 +403,8 @@ async function sendSmtpEmail({ to, from, subject, text, html }) {
   });
 }
 
-async function sendResendEmail({ to, from, subject, text, html }) {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${getEnvValue('RESEND_API_KEY')}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'HostelPro/1.0'
-    },
-    body: JSON.stringify({ from, to, subject, text, html })
-  });
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`Resend email provider error: ${detail}`);
-  }
-  return true;
-}
-
-function getResendFromAddress() {
-  const configuredFrom = getEnvValue('MAIL_FROM');
-  if (!configuredFrom) return 'HostelPro <onboarding@resend.dev>';
-
-  const emailMatch = configuredFrom.match(/<([^>]+)>|([^\s<>]+@[^\s<>]+)/);
-  const email = (emailMatch?.[1] || emailMatch?.[2] || '').toLowerCase();
-  const domain = email.split('@')[1] || '';
-  const publicDomains = new Set([
-    'gmail.com',
-    'googlemail.com',
-    'yahoo.com',
-    'outlook.com',
-    'hotmail.com',
-    'live.com',
-    'icloud.com'
-  ]);
-
-  if (publicDomains.has(domain)) {
-    console.warn(`MAIL_FROM ${email} cannot be used with Resend until its domain is verified. Falling back to onboarding@resend.dev.`);
-    return 'HostelPro <onboarding@resend.dev>';
-  }
-  return configuredFrom;
-}
-
 async function sendAppEmail({ to, subject, text, html }) {
-  if (getEnvValue('RESEND_API_KEY')) {
-    const from = getResendFromAddress();
-    return sendResendEmail({ to, from, subject, text, html });
-  }
-  const from = getEnvValue('MAIL_FROM') || `HostelPro <${getEnvValue('SMTP_USER') || 'onboarding@resend.dev'}>`;
+  const from = getEnvValue('MAIL_FROM') || `HostelPro <${getEnvValue('SMTP_USER') || 'no-reply@hostelpro.local'}>`;
   if (getEnvValue('SMTP_HOST')) {
     return sendSmtpEmail({ to, from, subject, text, html });
   }
@@ -493,9 +448,6 @@ function getEmailFailureMessage(error) {
   }
   if (/ETIMEDOUT|ECONNREFUSED|ECONNRESET|connection|timeout/i.test(detail)) {
     return 'Could not connect to Gmail SMTP. Check SMTP_HOST, SMTP_PORT, SMTP_SECURE, and redeploy.';
-  }
-  if (/Resend email provider error/i.test(detail)) {
-    return 'Resend email sending failed. Check RESEND_API_KEY and MAIL_FROM in Railway, then redeploy.';
   }
   return 'Email sending failed. Check SMTP variables and Gmail app password.';
 }
