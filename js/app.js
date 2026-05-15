@@ -18,19 +18,19 @@ class App {
             admin: {
                 label: 'Administrator',
                 home: '/dashboard',
-                routes: ['dashboard', 'hostels', 'notices', 'students', 'rooms', 'attendance', 'fees', 'complaints', 'leave', 'room-requests', 'visitors', 'reports', 'users', 'about'],
+                routes: ['dashboard', 'hostels', 'notices', 'students', 'rooms', 'attendance', 'fees', 'complaints', 'leave', 'room-requests', 'visitors', 'reports', 'users'],
                 description: 'Full control over hostel records, finance, rooms, attendance, complaints, visitors, and users.'
             },
             warden: {
                 label: 'Warden',
                 home: '/dashboard',
-                routes: ['dashboard', 'hostels', 'notices', 'students', 'rooms', 'attendance', 'complaints', 'leave', 'room-requests', 'visitors', 'reports', 'about'],
+                routes: ['dashboard', 'hostels', 'notices', 'students', 'rooms', 'attendance', 'complaints', 'leave', 'room-requests', 'visitors', 'reports'],
                 description: 'Manage day-to-day hostel operations, students, rooms, attendance, complaints, and visitor movement.'
             },
             student: {
                 label: 'Student',
                 home: '/dashboard',
-                routes: ['dashboard', 'notices', 'profile', 'attendance', 'fees', 'complaints', 'leave', 'room-requests', 'visitors', 'about'],
+                routes: ['dashboard', 'notices', 'profile', 'attendance', 'fees', 'complaints', 'leave', 'room-requests', 'visitors'],
                 description: 'View personal hostel details, attendance, fee status, complaints, and visitor records.'
             }
         };
@@ -53,8 +53,7 @@ class App {
             { route: 'room-requests', label: 'Room Requests', icon: 'RR' },
             { route: 'visitors', label: 'Visitors', icon: 'VS' },
             { route: 'reports', label: 'Reports', icon: 'RP' },
-            { route: 'users', label: 'Users', icon: 'US' },
-            { route: 'about', label: 'About', icon: 'AB' }
+            { route: 'users', label: 'Users', icon: 'US' }
         ];
 
         const allowed = this.roleConfig(user.role).routes;
@@ -79,17 +78,17 @@ class App {
     }
 
     canAccess(route) {
-        if (route === 'login' || route === 'register' || route === 'forgot-password') return true;
+        if (route === 'home' || route === 'login' || route === 'register' || route === 'forgot-password') return true;
         const user = authManager.getCurrentUser();
         return user && this.roleConfig(user.role).routes.includes(route);
     }
 
     router() {
-        const hash = window.location.hash.slice(1) || '/login';
-        const route = hash.split('/')[1] || 'login';
+        const hash = window.location.hash.slice(1) || '/home';
+        const route = hash.split('/')[1] || 'home';
         const user = authManager.getCurrentUser();
 
-        if (route !== 'login' && route !== 'register' && route !== 'forgot-password' && !user) {
+        if (route !== 'home' && route !== 'login' && route !== 'register' && route !== 'forgot-password' && !user) {
             window.location.hash = '#/login';
             return;
         }
@@ -110,6 +109,12 @@ class App {
 
     render() {
         const appContainer = document.getElementById('app');
+
+        if (this.currentPage === 'home') {
+            appContainer.innerHTML = this.getHomePage();
+            this.attachHomeHandlers();
+            return;
+        }
 
         if (this.currentPage === 'login') {
             appContainer.innerHTML = this.getLoginPage();
@@ -146,11 +151,132 @@ class App {
             'room-requests': () => this.loadRoomRequests(),
             visitors: () => this.loadVisitors(),
             reports: () => this.loadReports(),
-            users: () => this.loadUsers(),
-            about: () => this.loadAbout()
+            users: () => this.loadUsers()
         };
 
         (loaders[this.currentPage] || loaders.dashboard)();
+    }
+
+    getHomePage() {
+        const user = authManager.getCurrentUser();
+        const primaryHref = user ? '#/dashboard' : '#/login';
+        const primaryLabel = user ? 'Open Dashboard' : 'Login';
+        const features = [
+            ['Student Management', 'Keep student profiles, hostel assignment, guardian details, and approval status organized.'],
+            ['Room Management', 'Track hostel blocks, rooms, bed capacity, occupied beds, and availability.'],
+            ['Fee Payments', 'Record payments, receipt details, approval status, and student fee progress.'],
+            ['Complaints', 'Let students raise hostel issues and help wardens/admins track resolution.'],
+            ['Attendance', 'Maintain daily attendance with status, remarks, and marked-by information.'],
+            ['Visitor Records', 'Manage visitor details, relationship, purpose, check-in, and check-out records.'],
+            ['Email OTP', 'Verify registration and password reset requests using secure email codes.'],
+            ['Role Dashboards', 'Separate workspaces for admin, warden, and student users.']
+        ];
+
+        return `
+      <main class="public-home">
+        <nav class="home-nav">
+          <a class="home-brand" href="#/home">
+            <span>HM</span>
+            <strong>HostelPro</strong>
+          </a>
+          <div class="home-nav-links">
+            <a href="#/home" data-home-scroll="homeFeatures">Features</a>
+            <a href="#/home" data-home-scroll="homeAbout">About</a>
+            <a href="#/home" data-home-scroll="homeRoles">Access</a>
+            <a class="home-nav-login" href="#/login">Login</a>
+          </div>
+        </nav>
+
+        <section class="home-hero">
+          <div class="home-hero-copy">
+            <p class="home-eyebrow">Smart hostel administration</p>
+            <h1>Welcome to Hostel Management System</h1>
+            <p>Manage students, rooms, fees, complaints, attendance, visitors, and email OTP verification from one clean web platform.</p>
+            <div class="home-actions">
+              <a class="btn btn-primary" href="${primaryHref}">${primaryLabel}</a>
+              <a class="btn btn-outline" href="#/register">Register Student</a>
+            </div>
+          </div>
+          <div class="home-dashboard-preview" aria-label="Hostel dashboard preview">
+            <div class="preview-topbar">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="preview-grid">
+              <div><strong>128</strong><span>Students</span></div>
+              <div><strong>42</strong><span>Rooms</span></div>
+              <div><strong>18</strong><span>Requests</span></div>
+              <div><strong>96%</strong><span>Attendance</span></div>
+            </div>
+            <div class="preview-list">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="home-section home-features" id="homeFeatures">
+          <div class="home-section-heading">
+            <p class="home-eyebrow">Features</p>
+            <h2>Everything needed for hostel operations</h2>
+          </div>
+          <div class="home-feature-grid">
+            ${features.map(([title, text]) => `
+              <article class="home-feature-card">
+                <span></span>
+                <h3>${title}</h3>
+                <p>${text}</p>
+              </article>
+            `).join('')}
+          </div>
+        </section>
+
+        <section class="home-section home-about-band" id="homeAbout">
+          <div>
+            <p class="home-eyebrow">About</p>
+            <h2>Built to reduce manual hostel record work.</h2>
+          </div>
+          <p>HostelPro helps institutions replace paper registers and scattered spreadsheets with a centralized system. Admins can approve accounts and manage records, wardens can handle daily hostel activity, and students can access personal services after approval.</p>
+        </section>
+
+        <section class="home-section" id="homeRoles">
+          <div class="home-section-heading">
+            <p class="home-eyebrow">Access</p>
+            <h2>Choose the right workspace</h2>
+          </div>
+          <div class="home-role-grid">
+            <a href="#/login" class="home-role-card">
+              <strong>Admin Login</strong>
+              <span>Users, rooms, fees, reports, and approvals</span>
+            </a>
+            <a href="#/login" class="home-role-card">
+              <strong>Warden Login</strong>
+              <span>Attendance, visitors, complaints, and requests</span>
+            </a>
+            <a href="#/login" class="home-role-card">
+              <strong>Student Login</strong>
+              <span>Profile, fees, complaints, leave, and room requests</span>
+            </a>
+          </div>
+        </section>
+
+        <footer class="home-footer">
+          <span>Hostel Management System</span>
+          <div>
+            <a href="#/login">Login</a>
+            <a href="#/register">Register</a>
+          </div>
+        </footer>
+      </main>
+    `;
+    }
+
+    attachHomeHandlers() {
+        document.querySelectorAll('[data-home-scroll]').forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const target = document.getElementById(link.dataset.homeScroll);
+                target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
     }
 
     getLoginPage() {
@@ -219,6 +345,7 @@ class App {
               Don't have an account?
               <a href="#/register">Register</a>
             </p>
+            <p class="text-center mt-3"><a href="#/home" class="text-primary">Back to home</a></p>
           </form>
         </section>
       </div>
@@ -264,7 +391,7 @@ class App {
             <div id="registerError" class="alert-danger hidden"></div>
             <button type="submit" class="btn btn-primary btn-block">Send Request</button>
           </form>
-          <p class="text-center mt-3"><a href="#/login" class="text-primary">Back to login</a></p>
+          <p class="text-center mt-3"><a href="#/login" class="text-primary">Back to login</a> | <a href="#/home" class="text-primary">Home</a></p>
         </section>
       </div>
     `;
@@ -300,7 +427,7 @@ class App {
             <div id="forgotError" class="alert-danger hidden"></div>
             <button type="submit" class="btn btn-primary btn-block">Reset Password</button>
           </form>
-          <p class="text-center mt-3"><a href="#/login" class="text-primary">Back to login</a></p>
+          <p class="text-center mt-3"><a href="#/login" class="text-primary">Back to login</a> | <a href="#/home" class="text-primary">Home</a></p>
         </section>
       </div>
     `;
